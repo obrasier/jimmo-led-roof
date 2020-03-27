@@ -3,26 +3,20 @@ import machine
 from ustruct import unpack, unpack_from
 import neopixel
 
-LED_1_PIN = machine.Pin(1)
-LED_2_PIN = machine.Pin(2)
-LED_3_PIN = machine.Pin(3)
-LED_4_PIN = machine.Pin(4)
 
 _MY_UNIVERSES = (1, 2, 3)
-_NUM_LEDS = const(200)
 _LED_BUFFER_LEN = const(_NUM_LEDS*3)
-_SK_BUFFER_LEN = const(_NUM_LEDS*4)
 
-led1 = neopixel.NeoPixel(LED_1_PIN, _NUM_LEDS, bpp=4)
-led2 = neopixel.NeoPixel(LED_2_PIN, _NUM_LEDS, bpp=4)
-led3 = neopixel.NeoPixel(LED_3_PIN, _NUM_LEDS, bpp=4)
-led4 = neopixel.NeoPixel(LED_4_PIN, _NUM_LEDS, bpp=4)
+led1 = neopixel.NeoPixel(machine.Pin(1), _NUM_LEDS, bpp=4)
+led2 = neopixel.NeoPixel(machine.Pin(2), _NUM_LEDS, bpp=4)
+led3 = neopixel.NeoPixel(machine.Pin(3), _NUM_LEDS, bpp=4)
+led4 = neopixel.NeoPixel(machine.Pin(4), _NUM_LEDS, bpp=4)
 
 # sACN vectors
 VECTOR_ROOT_E131_DATA       = const(b'\x00\x00\x00\x04')
 VECTOR_ROOT_E131_EXTENDED   = const(b'\x00\x00\x00\x08')
 VECTOR_E131_DATA_PACKET     = const(b'\x00\x00\x00\x02')
-VECTOR_DMP_SET_PROPERTY     = 0x02
+VECTOR_DMP_SET_PROPERTY     = const(0x02)
 
 lookup_output = {1: (led1, 0), 2: (led2, 0), 3: (led3, 0)}
 
@@ -49,8 +43,8 @@ def update_strip(data, universe):
     
 def handle_artnet(packet):
     op_code, version, sequence, physical, universe, length = unpack('!HHBBHH', packet[8:18])
-    if op_code != 0x5000:
-        # not OpDmx, ignore
+    if op_code != 0x5000 or version != 14:
+        # not OpDmx
         return
     if universe not in _MY_UNIVERSES:
         return
@@ -70,9 +64,9 @@ def handle_sacn(packet):
     priority, addr, sequence, options, universe  = unpack('!BHBBH', packet[108:115])
     if universe not in _MY_UNIVERSES:
         return
-    preview = (options & 0b10000000) >> 7
-    stream_terminated = (options & 0b01000000) >> 6
-    force_sync = (options & 0b00100000) >> 5
+    # preview = (options & 0b10000000) >> 7
+    # stream_terminated = (options & 0b01000000) >> 6
+    # force_sync = (options & 0b00100000) >> 5
     dmx_data = unpack('512H', packet[126:638])
     update_strip(dmx_data, universe)
 
