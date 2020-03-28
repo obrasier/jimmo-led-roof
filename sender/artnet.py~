@@ -90,3 +90,4 @@ class ArtDmxPacket:
     def send_nparray(self, np_array):
         self.buffer = np_array.tobytes()
         self.update()
+        time.sleep(1)
