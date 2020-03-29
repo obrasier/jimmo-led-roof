@@ -42,10 +42,12 @@ def update_strip(data, universe):
     led_strip.show()
     
 def handle_artnet(packet):
-    op_code, version, sequence, physical, universe, length = unpack('!HHBBHH', packet[8:18])
+    op_code, version, sequence, physical, subnet_universe, net, length = unpack('!HHBBBBH', packet[8:18])
     if op_code != 0x5000 or version != 14:
         # not OpDmx
         return
+    universe = subnet_universe & 0x7 # first 3 bits
+    subnet = subnet_universe >> 4    # high 4 bits
     if universe not in _MY_UNIVERSES:
         return
     dmx_data = unpack_from('{}H'.format(length), packet, offset=18)
