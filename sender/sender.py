@@ -15,8 +15,6 @@ strip_7 = ArtDmxPacket(target_ip='127.0.0.1', universe=7, packet_size=450)
 strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=450)
 strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=450)
 
-LEN_LOOKUP = {0: 120, 1: 120, 2: 120, 3: 120, 4: 150, 5: 150, 6: 150, 7: 150, 8: 150}
-
 LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
 
 
@@ -27,6 +25,9 @@ def current_ms():
 _NUM_STRIPS = 11
 _STRIP_LENGTH = 200
 _PIXELS_IN_UNIVERSE = 170
+
+_VIDEO_WIDTH = 150
+_VIDEO_HEIGHT = 84
 u_lookup = {0: 0}
 dmx_data_start = np.zeros(510, dtype=np.uint8)
 dmx_data_short = np.zeros(300, dtype=np.uint8)
@@ -35,10 +36,10 @@ dmx_data_long = np.zeros(450, dtype=np.uint8)
 
 def process_frame(frame, average=False, order_bgr=True):
     rows, cols, dims = frame.shape
-    if cols != 150 or rows != 9:
-        frame = cv2.resize(frame, dsize=(150, 9), interpolation=cv2.INTER_CUBIC)
-    for strip in range(9):
-        pixel_row = frame[strip]
+    if cols != 150 or rows != 84:
+        frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
+    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, 9, dtype=int)):
+        pixel_row = frame[row]
         if strip < 4:
             pixel_row = pixel_row[:120]
         if order_bgr:
@@ -50,16 +51,6 @@ def process_frame(frame, average=False, order_bgr=True):
         LED_STRIPS[strip].send_nparray(row)
         #print(f'{strip}, {len(row)}: {row}')
 
-def get_pixel_rgb(frame, x, y):
-    b, g, r = frame[x][y]
-    return r, g, b
-
-def average_area(area):
-    if len(area.shape) == 3:
-        b, g, r = np.mean(np.mean(area, axis=0), axis=0).astype(np.uint8)
-    else:
-        b, g, r = np.mean(area, axis=0).astype(np.uint8)
-    return r, g, b
 
 print('starting video')
 videos = glob.glob('videos/*')
