@@ -6,18 +6,19 @@ import glob
 from artnet import ArtDmxPacket
 
 _SHORT_STRIP_LEDS = 120
-_VIDEO_WIDTH = 150
+_LONG_STRIP_LEDS = 150
+_VIDEO_WIDTH = _LONG_STRIP_LEDS
 _VIDEO_HEIGHT = 84
 
 strip_1 = ArtDmxPacket(target_ip='127.0.0.1', universe=1, packet_size=_SHORT_STRIP_LEDS*3)
 strip_2 = ArtDmxPacket(target_ip='127.0.0.1', universe=2, packet_size=_SHORT_STRIP_LEDS*3)
 strip_3 = ArtDmxPacket(target_ip='127.0.0.1', universe=3, packet_size=_SHORT_STRIP_LEDS*3)
 strip_4 = ArtDmxPacket(target_ip='127.0.0.1', universe=4, packet_size=_SHORT_STRIP_LEDS*3)
-strip_5 = ArtDmxPacket(target_ip='127.0.0.1', universe=5, packet_size=_VIDEO_WIDTH*3)
-strip_6 = ArtDmxPacket(target_ip='127.0.0.1', universe=6, packet_size=_VIDEO_WIDTH*3)
-strip_7 = ArtDmxPacket(target_ip='127.0.0.1', universe=7, packet_size=_VIDEO_WIDTH*3)
-strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=_VIDEO_WIDTH*3)
-strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=_VIDEO_WIDTH*3)
+strip_5 = ArtDmxPacket(target_ip='127.0.0.1', universe=5, packet_size=_LONG_STRIP_LEDS*3)
+strip_6 = ArtDmxPacket(target_ip='127.0.0.1', universe=6, packet_size=_LONG_STRIP_LEDS*3)
+strip_7 = ArtDmxPacket(target_ip='127.0.0.1', universe=7, packet_size=_LONG_STRIP_LEDS*3)
+strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=_LONG_STRIP_LEDS*3)
+strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=_LONG_STRIP_LEDS*3)
 
 LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
 _NUM_STRIPS = len(LED_STRIPS)
@@ -35,6 +36,7 @@ def process_frame(frame, average=False, order_rgb=False):
         if strip < 4:
             pixel_row = pixel_row[:_SHORT_STRIP_LEDS]
         if order_rgb:
+            # swap columns 0 and 2 to convert BGR -> RGB
             pixel_row[:, [2, 0]] = pixel_row[:, [0, 2]]
         row = np.reshape(pixel_row, (pixel_row.shape[0]*pixel_row.shape[1]))
         LED_STRIPS[strip].send_nparray(row)
@@ -49,7 +51,6 @@ for v in videos:
 
     # get total number of frames
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    running_time = fps * total_frames * 30
 
     ms_per_frame = 1000 // fps
 
