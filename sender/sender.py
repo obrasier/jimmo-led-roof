@@ -24,7 +24,7 @@ def current_ms():
 
 def process_frame(frame, average=False, order_bgr=True):
     rows, cols, dims = frame.shape
-    if cols != 150 or rows != 84:
+    if cols != _VIDEO_WIDTH or rows != _VIDEO_HEIGHT:
         frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
     for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, 9, dtype=int)):
         pixel_row = frame[row]
