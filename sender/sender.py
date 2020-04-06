@@ -5,37 +5,38 @@ import glob
 
 from artnet import ArtDmxPacket
 
-strip_1 = ArtDmxPacket(target_ip='127.0.0.1', universe=1, packet_size=360)
-strip_2 = ArtDmxPacket(target_ip='127.0.0.1', universe=2, packet_size=360)
-strip_3 = ArtDmxPacket(target_ip='127.0.0.1', universe=3, packet_size=360)
-strip_4 = ArtDmxPacket(target_ip='127.0.0.1', universe=4, packet_size=360)
-strip_5 = ArtDmxPacket(target_ip='127.0.0.1', universe=5, packet_size=450)
-strip_6 = ArtDmxPacket(target_ip='127.0.0.1', universe=6, packet_size=450)
-strip_7 = ArtDmxPacket(target_ip='127.0.0.1', universe=7, packet_size=450)
-strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=450)
-strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=450)
-
-LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
+_SHORT_STRIP_LEDS = 120
 _VIDEO_WIDTH = 150
 _VIDEO_HEIGHT = 84
+
+strip_1 = ArtDmxPacket(target_ip='127.0.0.1', universe=1, packet_size=_SHORT_STRIP_LEDS*3)
+strip_2 = ArtDmxPacket(target_ip='127.0.0.1', universe=2, packet_size=_SHORT_STRIP_LEDS*3)
+strip_3 = ArtDmxPacket(target_ip='127.0.0.1', universe=3, packet_size=_SHORT_STRIP_LEDS*3)
+strip_4 = ArtDmxPacket(target_ip='127.0.0.1', universe=4, packet_size=_SHORT_STRIP_LEDS*3)
+strip_5 = ArtDmxPacket(target_ip='127.0.0.1', universe=5, packet_size=_VIDEO_WIDTH*3)
+strip_6 = ArtDmxPacket(target_ip='127.0.0.1', universe=6, packet_size=_VIDEO_WIDTH*3)
+strip_7 = ArtDmxPacket(target_ip='127.0.0.1', universe=7, packet_size=_VIDEO_WIDTH*3)
+strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=_VIDEO_WIDTH*3)
+strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=_VIDEO_WIDTH*3)
+
+LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
+_NUM_STRIPS = len(LED_STRIPS)
+
 
 def current_ms():
     return time.time_ns() // 1000000
 
-def process_frame(frame, average=False, order_bgr=True):
+def process_frame(frame, average=False, order_rgb=False):
     rows, cols, dims = frame.shape
     if cols != _VIDEO_WIDTH or rows != _VIDEO_HEIGHT:
         frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
-    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, 9, dtype=int)):
+    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, _NUM_STRIPS, dtype=int)):
         pixel_row = frame[row]
         if strip < 4:
-            pixel_row = pixel_row[:120]
-        if order_bgr:
-            row = np.reshape(pixel_row, (pixel_row.shape[0]*pixel_row.shape[1]))
-        else:
-            # swap columns 0 and 2 to get RGB
+            pixel_row = pixel_row[:_SHORT_STRIP_LEDS]
+        if order_rgb:
             pixel_row[:, [2, 0]] = pixel_row[:, [0, 2]]
-            row = np.reshape(pixel_row, (pixel_row.shape[0]*pixel_row.shape[1]))
+        row = np.reshape(pixel_row, (pixel_row.shape[0]*pixel_row.shape[1]))
         LED_STRIPS[strip].send_nparray(row)
         #print(f'{strip}, {len(row)}: {row}')
 
