@@ -16,23 +16,11 @@ strip_8 = ArtDmxPacket(target_ip='127.0.0.1', universe=8, packet_size=450)
 strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=450)
 
 LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
-
+_VIDEO_WIDTH = 150
+_VIDEO_HEIGHT = 84
 
 def current_ms():
     return time.time_ns() // 1000000
-
-
-_NUM_STRIPS = 11
-_STRIP_LENGTH = 200
-_PIXELS_IN_UNIVERSE = 170
-
-_VIDEO_WIDTH = 150
-_VIDEO_HEIGHT = 84
-u_lookup = {0: 0}
-dmx_data_start = np.zeros(510, dtype=np.uint8)
-dmx_data_short = np.zeros(300, dtype=np.uint8)
-dmx_data_long = np.zeros(450, dtype=np.uint8)
-
 
 def process_frame(frame, average=False, order_bgr=True):
     rows, cols, dims = frame.shape
