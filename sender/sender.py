@@ -68,25 +68,20 @@ for v in videos:
         next_frame = frames_used.pop()
 
     for frame_num in range(total_frames):
+        # read the frame first.
+        frame_start = current_ms()
+        ret, frame = cap.read()
+        if not ret or skip_next_frame:
+            skip_next_frame = False
+            continue
+
         # if the FPS is too high, check if we need to skip this frame
         if skipping_frames: 
             if frame_num == next_frame:
                 next_frame = frames_used.pop()
             else:
                 continue
-        
-        if skip_next_frame:
-            skip_next_frame = False
-            continue
 
-        frame_start = current_ms()
-        ret, frame = cap.read()
-        if not ret:
-            # return failed, no frame read, skip
-            continue
-
-        row, cols, dims = frame.shape
-        print(total_frames, row, cols, dims)
         process_frame(frame)
         frame_end = current_ms()
         time_left = ms_per_frame - (frame_end - frame_start)
