@@ -57,6 +57,8 @@ class ArtDmxPacket:
         packet.extend(self.header)
         if len(self.buffer) > 512:
             raise Exception('Buffer too long')
+        if len(self.buffer) != self.packet_size:
+            raise Exception('Buffer and size mismatch')
         packet.extend(self.buffer)
         try:
             self.socket.sendto(packet, (self.target_ip, self.port))
