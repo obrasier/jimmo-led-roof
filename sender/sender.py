@@ -32,7 +32,7 @@ def process_frame(frame, order_rgb=False):
     rows, cols, dims = frame.shape
     if cols != _VIDEO_WIDTH or rows != _VIDEO_HEIGHT:
         frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
-    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, _NUM_STRIPS, dtype=int)):
+    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, _NUM_STRIPS, endpoint=False, dtype=int)):
         pixel_row = frame[row]
         if strip < 4:
             pixel_row = pixel_row[:_SHORT_STRIP_LEDS]
@@ -55,16 +55,16 @@ for v in videos:
     if fps > _MAX_FPS:
         frames_used = deque()
         duration = total_frames / fps
-        for n in np.linspace(0, total_frames, _MAX_FPS * duration, dtype=int):
+        for n in np.linspace(0, total_frames-1, _MAX_FPS * duration, endpoint=False, dtype=int):
             frames_used.appendleft(n)
-        skipping_frames = True
+        high_fps = True
         ms_per_frame = 1000 // _MAX_FPS
     else:
         ms_per_frame = 1000 // fps
-        skipping_frames = False
+        high_fps = False
     skip_next_frame = False
 
-    if skipping_frames:
+    if high_fps:
         next_frame = frames_used.pop()
 
     for frame_num in range(total_frames):
@@ -76,7 +76,7 @@ for v in videos:
             continue
 
         # if the FPS is too high, check if we need to skip this frame
-        if skipping_frames: 
+        if high_fps: 
             if frame_num == next_frame:
                 next_frame = frames_used.pop()
             else:

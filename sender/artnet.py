@@ -30,7 +30,7 @@ class ArtDmxPacket:
         self.header = bytearray()
         self.buffer = bytearray(self.packet_size)
         self.sequence = 0x00
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.make_header()
 
     def make_header(self):
@@ -61,12 +61,12 @@ class ArtDmxPacket:
             raise Exception('Buffer and size mismatch')
         packet.extend(self.buffer)
         try:
-            self.socket.sendto(packet, (self.target_ip, self.port))
+            self.sock.sendto(packet, (self.target_ip, self.port))
         except:
             print('Error sending packet.')
 
     def close(self):
-        self.socket.close()
+        self.sock.close()
 
     def set_value(self, address, value):
         if address > self.packet_size - 1 or address < 0:
