@@ -73,17 +73,10 @@ class ArtDmxPacket:
             # out of range
             return
         self.buffer[address] = value
-
-    def set_rgb(self, pixel, r, g, b):
-        address = pixel * 3
-        self.set_value(address, r)
-        self.set_value(address+1, g)
-        self.set_value(address+2, b)
-
-    def set_all_rgb(self, r, g, b):
-        for p in range(0, self.packet_size, 3):
-            self.set_rgb(p, r, g, b)
-        self.update()
+    
+    def set_packet_size(self, packet_size):
+        self.packet_size = packet_size
+        self.make_header()
 
     def clear(self):
         self.buffer = bytearray(self.packet_size)
