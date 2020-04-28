@@ -5,10 +5,11 @@ import glob
 from collections import deque
 from artnet import ArtDmxPacket
 
+_ASPECT_RATIO = (16, 9)
 _SHORT_STRIP_LEDS = 120
 _LONG_STRIP_LEDS = 150
 _VIDEO_WIDTH = _LONG_STRIP_LEDS
-_VIDEO_HEIGHT = 84
+_VIDEO_HEIGHT = (_VIDEO_WIDTH // _ASPECT_RATIO[0]) * _ASPECT_RATIO[1]
 _MAX_FPS = 30
 
 strip_1 = ArtDmxPacket(target_ip='127.0.0.1', universe=1, packet_size=_SHORT_STRIP_LEDS*3)
@@ -24,6 +25,9 @@ strip_9 = ArtDmxPacket(target_ip='127.0.0.1', universe=9, packet_size=_LONG_STRI
 LED_STRIPS = [strip_1, strip_2, strip_3, strip_4, strip_5, strip_7, strip_7, strip_8, strip_9]
 _NUM_STRIPS = len(LED_STRIPS)
 
+def linspace_generator(start, stop, num_steps, dtype=int):
+    for x in range(num_steps):
+        yield dtype(x * (stop - start) / (num_steps - 1))
 
 def current_ms():
     return time.time_ns() // 1000000
@@ -32,7 +36,7 @@ def process_frame(frame, order_rgb=False):
     rows, cols, dims = frame.shape
     if cols != _VIDEO_WIDTH or rows != _VIDEO_HEIGHT:
         frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
-    for strip, row in enumerate(np.linspace(0, _VIDEO_HEIGHT, _NUM_STRIPS, endpoint=False, dtype=int)):
+    for strip, row in enumerate(linspace_generator(0, _VIDEO_HEIGHT - 1, _NUM_STRIPS)):
         pixel_row = frame[row]
         if strip < 4:
             pixel_row = pixel_row[:_SHORT_STRIP_LEDS]
@@ -53,10 +57,9 @@ for v in videos:
     # if the video is too high FPS, get the frames we will use and
     # put them in a deque, so we can pop off the frames we need
     if fps > _MAX_FPS:
-        frames_used = deque()
         duration = total_frames / fps
-        for n in np.linspace(0, total_frames-1, _MAX_FPS * duration, endpoint=False, dtype=int):
-            frames_used.appendleft(n)
+        frames_used = linspace_generator(0, total_frames - 1, duration * _MAX_FPS)
+        next_frame = next(frames_used)
         high_fps = True
         ms_per_frame = 1000 // _MAX_FPS
     else:
@@ -64,23 +67,22 @@ for v in videos:
         high_fps = False
     skip_next_frame = False
 
-    if high_fps:
-        next_frame = frames_used.pop()
-
     for frame_num in range(total_frames):
         # read the frame first.
         frame_start = current_ms()
         ret, frame = cap.read()
+
+        # if the FPS is too high, check if we need to skip this frame
+        # must be called before checking skip_next_frame
+        if high_fps:
+            if frame_num == next_frame:
+                next_frame = next(frames_used)
+            else:
+                continue
+        
         if not ret or skip_next_frame:
             skip_next_frame = False
             continue
-
-        # if the FPS is too high, check if we need to skip this frame
-        if high_fps: 
-            if frame_num == next_frame:
-                next_frame = frames_used.pop()
-            else:
-                continue
 
         process_frame(frame)
         frame_end = current_ms()
