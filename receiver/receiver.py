@@ -3,7 +3,7 @@ import machine
 from ustruct import unpack, unpack_from
 import neopixel
 
-
+_NUM_LEDS = 150
 _MY_UNIVERSES = (1, 2, 3)
 _LED_BUFFER_LEN = const(_NUM_LEDS*3)
 
@@ -18,19 +18,16 @@ VECTOR_ROOT_E131_EXTENDED   = const(b'\x00\x00\x00\x08')
 VECTOR_E131_DATA_PACKET     = const(b'\x00\x00\x00\x02')
 VECTOR_DMP_SET_PROPERTY     = const(0x02)
 
-lookup_output = {1: (led1, 0), 2: (led2, 0), 3: (led3, 0)}
+led_offset = {1: (led1, 0), 2: (led2, 0), 3: (led3, 0)}
 
 def is_artnet(packet):
     if packet[:8] != b'Art-Net\0x00':
         return False
     return True
 
-def get_led_and_offset(universe):
-    return lookup_output[universe]
-
 def update_strip(data, universe):
     '''less pythonic but should run faster.'''
-    led_strip, offset = get_led_and_offset(universe)
+    led_strip, offset = led_offset[universe]
     pixel = offset
     for i in range(0, _LED_BUFFER_LEN, 3):
         led_index = pixel * 4
