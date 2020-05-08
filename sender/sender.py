@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 import glob
-from collections import deque
+
 from artnet import ArtDmxPacket
 
 _ASPECT_RATIO = (16, 9)
