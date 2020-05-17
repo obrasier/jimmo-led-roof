@@ -8,8 +8,8 @@ from artnet import ArtDmxPacket
 _ASPECT_RATIO = (16, 9)
 _SHORT_STRIP_LEDS = 120
 _LONG_STRIP_LEDS = 150
-_VIDEO_WIDTH = _LONG_STRIP_LEDS
-_VIDEO_HEIGHT = (_VIDEO_WIDTH // _ASPECT_RATIO[0]) * _ASPECT_RATIO[1]
+_VIDEO_HEIGHT = _LONG_STRIP_LEDS
+_VIDEO_WIDTH = (_VIDEO_HEIGHT // _ASPECT_RATIO[1]) * _ASPECT_RATIO[0]
 _MAX_FPS = 30
 
 strip_1 = ArtDmxPacket(target_ip='127.0.0.1', universe=1, packet_size=_SHORT_STRIP_LEDS*3)
@@ -36,16 +36,16 @@ def process_frame(frame, order_rgb=False):
     rows, cols, dims = frame.shape
     if cols != _VIDEO_WIDTH or rows != _VIDEO_HEIGHT:
         frame = cv2.resize(frame, dsize=(_VIDEO_WIDTH, _VIDEO_HEIGHT), interpolation=cv2.INTER_CUBIC)
-    for strip, row in enumerate(linspace_generator(0, _VIDEO_HEIGHT - 1, _NUM_STRIPS)):
-        pixel_row = frame[row]
+    for strip, col in enumerate(linspace_generator(0, _VIDEO_WIDTH - 1, _NUM_STRIPS)):
+        pixel_col = frame[:, col]
         if strip < 4:
-            pixel_row = pixel_row[:_SHORT_STRIP_LEDS]
+            pixel_col = pixel_col[:_SHORT_STRIP_LEDS]
         if order_rgb:
             # swap columns 0 and 2 to convert BGR -> RGB
-            pixel_row[:, [2, 0]] = pixel_row[:, [0, 2]]
-        dmx_data = np.reshape(pixel_row, (pixel_row.shape[0]*pixel_row.shape[1]))
+            pixel_col[:, [2, 0]] = pixel_col[:, [0, 2]]
+        dmx_data = np.reshape(pixel_col, (pixel_col.shape[0]*pixel_col.shape[1]))
         LED_STRIPS[strip].send_nparray(dmx_data)
-        #print(f'{strip}, {len(row)}: {row}')
+        print(f'{strip}, {len(col)}: {col}')
 
 print('starting video')
 videos = glob.glob('videos/*')
@@ -54,10 +54,9 @@ for v in videos:
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
-    # if the video is too high FPS, get the frames we will use and
-    # put them in a deque, so we can pop off the frames we need
+    # if the video is too high FPS, get the frames we will use
     if fps > _MAX_FPS:
-        duration = total_frames / fps
+        duration = total_frames // int(fps)
         frames_used = linspace_generator(0, total_frames - 1, duration * _MAX_FPS)
         next_frame = next(frames_used)
         high_fps = True
